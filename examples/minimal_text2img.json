@@ -1,0 +1,15 @@
+{
+  "3": { "inputs": { "text": "hello comfy from serverless", "clip": ["4", 0] }, "class_type": "CLIPTextEncode" },
+  "4": { "inputs": {}, "class_type": "CLIPLoader" },
+  "6": { "inputs": { "ckpt_name": "sd_xl_base_1.0.safetensors" }, "class_type": "CheckpointLoaderSimple" },
+  "7": { "inputs": { "width": 512, "height": 512, "batch_size": 1 }, "class_type": "EmptyLatentImage" },
+  "5": {
+    "inputs": {
+      "seed": 42, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0,
+      "model": ["6", 0], "positive": ["3", 0], "negative": ["3", 0], "latent_image": ["7", 0]
+    },
+    "class_type": "KSampler"
+  },
+  "8": { "inputs": { "samples": ["5", 0], "vae": ["6", 2] }, "class_type": "VAEDecode" },
+  "9": { "inputs": { "filename_prefix": "rp_demo", "images": ["8", 0] }, "class_type": "SaveImage" }
+}
