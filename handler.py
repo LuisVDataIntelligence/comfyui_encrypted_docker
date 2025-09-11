@@ -92,14 +92,31 @@ def handler(event: Dict[str, Any]):
     # The serverless request body should include {"input": {...}}
     data = event.get("input") or {}
     wf = _decrypt_if_needed(data)
-    if not isinstance(wf, dict) or "__error" in wf:
-        return {"error": wf.get("__error", "Missing or invalid workflow")}
+    # Basic validation and friendly guidance if the wrong JSON shape was sent
+    if not isinstance(wf, dict):
+        return {"error": "Missing or invalid workflow: expected an API prompt mapping (id->node)"}
+    if "__error" in wf:
+        return {"error": wf.get("__error", "Invalid encrypted payload")}
+    # Detect ComfyUI graph-editor export (nodes/links) and guide the user
+    if any(k in wf for k in ("nodes", "links", "last_node_id")):
+        return {
+            "error": "Invalid workflow format: received a graph export (nodes/links). Send an API-ready prompt mapping instead.",
+            "hint": "Use a client that converts ComfyUI graph JSON to the /prompt API format (id->node mapping with class_type/inputs)."
+        }
 
     client_id = data.get("client_id") or f"rp-{uuid.uuid4()}"
     # Execute workflow and return metadata (no prompts echoed)
-    res = comfy_client.run_workflow_and_wait(wf, client_id)
+    # Allow per-request override of history behavior
+    no_history_req = str(data.get("no_history", "")).strip()
+    no_history = (NO_HISTORY == "1") or (no_history_req == "1" or no_history_req.lower() == "true")
 
-    if NO_HISTORY == "1":
+    try:
+        res = comfy_client.run_workflow_and_wait(wf, client_id)
+    except Exception as e:
+        log.exception("workflow execution failed")
+        return {"error": f"execution_failed: {type(e).__name__}: {str(e)}"}
+
+    if no_history:
         # Return only bare minimum
         return {"status": "ok", "prompt_id": res.get("prompt_id")}
 
