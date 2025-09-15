@@ -14,8 +14,10 @@ if str(REPO_ROOT) not in sys.path:
 
 try:
     from shared.crypto_secure import encrypt_for_server
+    from shared.env_loader import load_dotenv_if_present
 except Exception:
     encrypt_for_server = None  # Only needed for encrypted tests
+    load_dotenv_if_present = None
 
 
 def _headers(api_key: str) -> dict:
@@ -102,9 +104,21 @@ def main():
     p.add_argument("--endpoint-id", default=os.getenv("RP_ENDPOINT_ID"), help="RunPod endpoint ID (env RP_ENDPOINT_ID)")
     p.add_argument("--api-key", default=os.getenv("RP_API_KEY"), help="RunPod API key (env RP_API_KEY)")
     p.add_argument("--public-key", default=os.getenv("SERVER_PUBLIC_KEY_B64"), help="Server public key b64 (required for encrypted mode)")
+    p.add_argument("--public-key-file", default=os.getenv("SERVER_PUBLIC_KEY_B64_FILE"), help="Path to a file containing the server public key (b64)")
     p.add_argument("--workflow", default=str(Path(__file__).parent / "examples/minimal_text2img.json"), help="Workflow JSON path (encrypted mode); default example")
     p.add_argument("--timeout", type=int, default=180, help="Timeout seconds for runsync/status polling")
     args = p.parse_args()
+
+    # Load .env (best-effort) without overriding existing env
+    if load_dotenv_if_present:
+        # Also consider a .env living next to this test script
+        load_dotenv_if_present(extra_paths=[Path(__file__).resolve().parent / '.env'])
+
+    # If flags were omitted, re-read defaults from environment after .env load
+    if not args.endpoint_id:
+        args.endpoint_id = os.getenv("RP_ENDPOINT_ID")
+    if not args.api_key:
+        args.api_key = os.getenv("RP_API_KEY")
 
     if not args.endpoint_id or not args.api_key:
         print("error: endpoint id and api key required (set RP_ENDPOINT_ID and RP_API_KEY)", file=sys.stderr)
@@ -116,10 +130,18 @@ def main():
         elif args.mode == "async":
             res = run_plain_async(args.endpoint_id, args.api_key, timeout=args.timeout)
         else:  # encrypted
-            if not args.public_key:
-                print("error: --public-key or env SERVER_PUBLIC_KEY_B64 required for encrypted mode", file=sys.stderr)
+            # Prefer CLI flag; otherwise refresh from env now that .env is loaded
+            public_key = args.public_key or os.getenv("SERVER_PUBLIC_KEY_B64")
+            # Fallback to file if provided
+            pk_file = args.public_key_file or os.getenv("SERVER_PUBLIC_KEY_B64_FILE")
+            if (not public_key) and pk_file:
+                pk_path = Path(pk_file)
+                if pk_path.exists():
+                    public_key = pk_path.read_text().strip()
+            if not public_key:
+                print("error: --public-key, --public-key-file, env SERVER_PUBLIC_KEY_B64, or SERVER_PUBLIC_KEY_B64_FILE required for encrypted mode", file=sys.stderr)
                 sys.exit(2)
-            res = run_encrypted_runsync(args.endpoint_id, args.api_key, args.public_key, Path(args.workflow), timeout=args.timeout)
+            res = run_encrypted_runsync(args.endpoint_id, args.api_key, public_key, Path(args.workflow), timeout=args.timeout)
         print(json.dumps(res, indent=2))
     except requests.HTTPError as e:
         print(f"http_error: {e}")
@@ -133,4 +155,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

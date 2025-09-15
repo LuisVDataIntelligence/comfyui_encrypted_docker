@@ -1,6 +1,10 @@
 import os
+from shared.env_loader import load_dotenv_if_present
 import runpod
 from typing import Any, Dict
+
+# Load .env (best-effort) before reading environment
+load_dotenv_if_present()
 
 # Server imports
 from server.worker_core import handle_request, init_comfy

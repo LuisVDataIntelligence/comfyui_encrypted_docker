@@ -14,3 +14,4 @@ workspace/
 # Misc
 .DS_Store
 Thumbs.db
+.env

@@ -1,5 +1,5 @@
 # Minimal CUDA + Python base. (Works for Serverless queue workers; not exposing ports.)
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -28,11 +28,11 @@ RUN git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /opt/Comfy
 RUN pip install --no-cache-dir -r /opt/ComfyUI/requirements.txt
 
 # Server deps
-COPY server/requirements.txt /opt/app/requirements.txt
+COPY phserver/requirements.txt /opt/app/requirements.txt
 RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 
 # Server code
-COPY server /opt/app/server
+COPY phserver /opt/app/phserver
 COPY shared /opt/app/shared
 
 # Where Serverless/Pod volume mounts; point Comfy to it for models
@@ -40,7 +40,7 @@ ENV COMFYUI_MODEL_DIR=/workspace/models
 ENV PYTHONPATH=/opt/ComfyUI:/opt/app:$PYTHONPATH
 
 # Entrypoint can run either serverless worker or API server for Pod use
-COPY server/entrypoint.sh /opt/app/entrypoint.sh
+COPY phserver/entrypoint.sh /opt/app/entrypoint.sh
 RUN chmod +x /opt/app/entrypoint.sh
 
 EXPOSE 8000

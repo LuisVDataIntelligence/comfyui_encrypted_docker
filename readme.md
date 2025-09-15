@@ -208,3 +208,13 @@ Example Hub inputs JSON (copy/paste):
 
 
 <!-- Removed PromptHelper combined pod instructions per request: this project is strictly an encrypted ComfyUI worker/API. -->
+
+## QA locally (no GPU required)
+
+- Build and run the container, then hit `/healthz` using the helper script:
+
+```
+bash tests/qa_container.sh
+```
+
+This starts the API in DRY_RUN mode (no models needed) and verifies the container boots cleanly.
