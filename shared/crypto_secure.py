@@ -53,3 +53,4 @@ def decrypt_from_client(server_sk_b64: str, epk_b64: str, nonce_b64: str, cipher
     box = Box(server_sk, client_epk)
     # Box wants full message = ciphertext only (nonce passed separately)
     return box.decrypt(ciphertext, nonce)
+

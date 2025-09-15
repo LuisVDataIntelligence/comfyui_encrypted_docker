@@ -1,6 +1,6 @@
 # client_encrypt_send.py
 import os, json, base64, requests
-from crypto_secure import encrypt_for_server
+from shared.crypto_secure import encrypt_for_server
 
 # --- configure ---
 ENDPOINT_ID = os.getenv("RP_ENDPOINT_ID")  # e.g. "abc123def"
@@ -8,7 +8,7 @@ API_KEY = os.getenv("RP_API_KEY")          # RunPod API key
 SERVER_PUBLIC_KEY_B64 = os.getenv("SERVER_PUBLIC_KEY_B64")  # base64 public key
 RUNSYNC = True  # True => /runsync; False => /run + poll later
 
-with open("examples/minimal_text2img.json", "r") as f:
+with open("client/examples/minimal_text2img.json", "r") as f:
     workflow = json.load(f)
 
 # Envelope encrypt

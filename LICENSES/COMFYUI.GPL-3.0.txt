@@ -1,0 +1,11 @@
+ComfyUI — GNU General Public License v3.0 (GPL-3.0)
+
+Upstream: https://github.com/comfyanonymous/ComfyUI
+License text: https://www.gnu.org/licenses/gpl-3.0.txt
+
+This repository’s Docker image includes ComfyUI by cloning the upstream project at build time. The container includes the full GPL-3.0 license at /opt/ComfyUI/LICENSE. You may obtain the source code at the upstream URL above.
+
+Summary (informative, not a substitute for the license):
+- You have the freedom to run, study, share, and modify the software.
+- If you distribute copies or modified versions, you must also make the source available under GPL‑3.0.
+

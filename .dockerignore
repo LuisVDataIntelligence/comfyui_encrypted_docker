@@ -1,0 +1,19 @@
+# VCS and metadata
+.git
+.github
+LICENSE
+LICENSES
+THIRD_PARTY_NOTICES.md
+CLAUDE.md
+readme.md
+
+# Client tools are not needed in the runtime image
+client
+
+# Local artifacts
+models
+workspace
+__pycache__
+*.py[cod]
+.DS_Store
+Thumbs.db

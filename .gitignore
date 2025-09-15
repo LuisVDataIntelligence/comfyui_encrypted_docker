@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local models / volumes
+models/
+workspace/
+
+# Editors
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+Thumbs.db

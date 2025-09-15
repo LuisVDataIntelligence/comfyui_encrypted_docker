@@ -1,16 +1,18 @@
-# handler.py
 import os, json, uuid, subprocess, logging
-import runpod
 from typing import Any, Dict
-import comfy_client
-from crypto_secure import decrypt_from_client
+
+from server import comfy_client
+from shared.crypto_secure import decrypt_from_client, load_private_key_b64
 
 # --------- Config ---------
-MODEL_DIR = os.environ.get("COMFYUI_MODEL_DIR", "/runpod-volume/models")
+MODEL_DIR = os.environ.get("COMFYUI_MODEL_DIR", "/workspace/models")
 COMFY_PORT = os.environ.get("COMFY_PORT", "8188")
+COMFY_STARTUP_TIMEOUT = int(os.environ.get("COMFY_STARTUP_TIMEOUT", "300"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "ERROR").upper()
 LOG_SILENT = os.getenv("LOG_SILENT", "1")  # "1" => silence ComfyUI stdout/stderr
 NO_HISTORY = os.getenv("NO_HISTORY", "0")  # "1" => don't GET /history
+# Require encrypted payloads by default for security. Set to "0" to allow plaintext workflows for testing.
+ENCRYPTION_REQUIRED = os.getenv("ENCRYPTION_REQUIRED", "1").lower() in ("1", "true", "yes")
 WORKER_PRIVATE_KEY_B64 = os.getenv("WORKER_PRIVATE_KEY_B64", "")
 
 # Logging (quiet by default)
@@ -19,7 +21,7 @@ for noisy in ("urllib3","requests","websocket","runpod"):
     logging.getLogger(noisy).setLevel(logging.ERROR)
 log = logging.getLogger("worker")
 
-WORKSPACE = "/workspace/ComfyUI"
+WORKSPACE = os.environ.get("COMFY_WORKSPACE", "/opt/ComfyUI")
 
 def ensure_dirs():
     os.makedirs(MODEL_DIR, exist_ok=True)
@@ -35,14 +37,18 @@ def start_comfy():
 
     cmd = [
         "python3", f"{WORKSPACE}/main.py",
-        "--headless",
-        "--no-sse",
+        "--disable-auto-launch",
         "--listen", "127.0.0.1",
         "--port", COMFY_PORT,
         "--output-directory", "/dev/shm/comfy_output",
         "--temp-directory", "/dev/shm/comfy_temp",
-        "--fast"
+        "--dont-print-server"
     ]
+    # If no GPU is visible in the container, force CPU mode so ComfyUI starts.
+    force_cpu_env = os.getenv("FORCE_CPU", "0")
+    no_gpu_detected = not os.path.exists("/dev/nvidiactl") and not os.getenv("NVIDIA_VISIBLE_DEVICES")
+    if force_cpu_env == "1" or no_gpu_detected:
+        cmd.append("--cpu")
     if LOG_SILENT == "1":
         return subprocess.Popen(cmd, env=env, cwd=WORKSPACE,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -51,15 +57,23 @@ def start_comfy():
 
 COMFY_PROC = None
 
-def init():
+def init_comfy():
     global COMFY_PROC
     ensure_dirs()
     if COMFY_PROC is None or (COMFY_PROC.poll() is not None):
         COMFY_PROC = start_comfy()
-        if not comfy_client.wait_for_server(timeout=120):
+        if not comfy_client.wait_for_server(timeout=COMFY_STARTUP_TIMEOUT):
             raise RuntimeError("ComfyUI server failed to start")
 
-init()
+def server_public_key_b64() -> str:
+    """Derive and return the server public key (base64) if private key is set."""
+    if not WORKER_PRIVATE_KEY_B64:
+        return ""
+    try:
+        sk = load_private_key_b64(WORKER_PRIVATE_KEY_B64)
+        return __import__("base64").b64encode(bytes(sk.public_key)).decode()
+    except Exception:
+        return ""
 
 def _decrypt_if_needed(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -82,15 +96,23 @@ def _decrypt_if_needed(payload: Dict[str, Any]) -> Dict[str, Any]:
         try:
             pt = decrypt_from_client(WORKER_PRIVATE_KEY_B64, epk, nonce, ciphertext)
             return json.loads(pt.decode("utf-8"))
-        except Exception as e:
+        except Exception:
             log.error("Decrypt failed")
             return {"__error": "invalid ciphertext"}
     else:
         return payload.get("workflow", {})
 
-def handler(event: Dict[str, Any]):
-    # The serverless request body should include {"input": {...}}
-    data = event.get("input") or {}
+def handle_request(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Accepts a dict with either an encrypted payload or a plain 'workflow' mapping.
+    Starts ComfyUI if needed, queues the workflow, waits, and returns minimal metadata.
+    """
+    init_comfy()
+
+    # Enforce encrypted-only mode unless explicitly disabled
+    if ENCRYPTION_REQUIRED and not data.get("encrypted"):
+        return {"error": "encryption_required: set ENCRYPTION_REQUIRED=0 to allow plaintext for testing"}
+
     wf = _decrypt_if_needed(data)
     # Basic validation and friendly guidance if the wrong JSON shape was sent
     if not isinstance(wf, dict):
@@ -105,7 +127,6 @@ def handler(event: Dict[str, Any]):
         }
 
     client_id = data.get("client_id") or f"rp-{uuid.uuid4()}"
-    # Execute workflow and return metadata (no prompts echoed)
     # Allow per-request override of history behavior
     no_history_req = str(data.get("no_history", "")).strip()
     no_history = (NO_HISTORY == "1") or (no_history_req == "1" or no_history_req.lower() == "true")
@@ -122,5 +143,3 @@ def handler(event: Dict[str, Any]):
 
     # Minimal history return; caller decides how to handle artifacts
     return {"status": "ok", "prompt_id": res.get("prompt_id"), "history": res.get("history")}
-
-runpod.serverless.start({"handler": handler})

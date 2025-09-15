@@ -48,3 +48,4 @@ def run_workflow_and_wait(workflow: dict, client_id: str):
     # Minimal fetch (metadata only). You can turn this off if you want even less I/O.
     hist = get_history(prompt_id)
     return {"prompt_id": prompt_id, "history": hist}
+

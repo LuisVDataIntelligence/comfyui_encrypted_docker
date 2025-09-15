@@ -9,7 +9,7 @@ const ENDPOINT_ID = process.env.RP_ENDPOINT_ID;
 const API_KEY     = process.env.RP_API_KEY;
 const SERVER_PK_B64 = process.env.SERVER_PUBLIC_KEY_B64; // base64 (32 bytes)
 
-const workflow = JSON.parse(fs.readFileSync('examples/minimal_text2img.json','utf8'));
+const workflow = JSON.parse(fs.readFileSync('client/examples/minimal_text2img.json','utf8'));
 
 // --- Envelope encrypt using nacl.box (curve25519-xsalsa20-poly1305) ---
 const serverPk = new Uint8Array(b64d(SERVER_PK_B64));
@@ -43,3 +43,4 @@ if (!res.ok) {
   process.exit(1);
 }
 console.log(await res.json());
+

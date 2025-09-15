@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace
+WORKDIR /opt/app
 
 # Python venv
 RUN python3 -m venv /opt/venv
@@ -24,20 +24,25 @@ RUN pip install --no-cache-dir --upgrade pip && \
       --index-url https://download.pytorch.org/whl/cu121
 
 # ComfyUI
-RUN git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /workspace/ComfyUI
-RUN pip install --no-cache-dir -r /workspace/ComfyUI/requirements.txt
+RUN git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /opt/ComfyUI
+RUN pip install --no-cache-dir -r /opt/ComfyUI/requirements.txt
 
-# Worker deps
-COPY requirements.txt /workspace/requirements.txt
-RUN pip install --no-cache-dir -r /workspace/requirements.txt
+# Server deps
+COPY server/requirements.txt /opt/app/requirements.txt
+RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 
-# Worker code
-COPY handler.py comfy_client.py crypto_secure.py /workspace/
-COPY examples /workspace/examples
+# Server code
+COPY server /opt/app/server
+COPY shared /opt/app/shared
 
-# Where Serverless network volume mounts; point Comfy to it for models
-ENV COMFYUI_MODEL_DIR=/runpod-volume/models
-ENV PYTHONPATH=/workspace/ComfyUI:$PYTHONPATH
+# Where Serverless/Pod volume mounts; point Comfy to it for models
+ENV COMFYUI_MODEL_DIR=/workspace/models
+ENV PYTHONPATH=/opt/ComfyUI:/opt/app:$PYTHONPATH
 
-# Start the worker (RunPod serverless handler)
-CMD ["python3", "/workspace/handler.py"]
+# Entrypoint can run either serverless worker or API server for Pod use
+COPY server/entrypoint.sh /opt/app/entrypoint.sh
+RUN chmod +x /opt/app/entrypoint.sh
+
+EXPOSE 8000
+
+CMD ["/opt/app/entrypoint.sh"]
