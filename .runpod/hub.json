@@ -22,7 +22,7 @@
       { "key": "WORKER_PRIVATE_KEY_B64", "input": { "name": "Server private key (b64)", "type": "string", "default": "" } }
     ]
   },
-  "handler": "server/handler.py",
+  "handler": "handler.py",
   "dockerfile": "Dockerfile",
   "environment": {}
 }
