@@ -1,0 +1,28 @@
+{
+  "title": "Comfyui_encrypted_docker",
+  "description": "Encrypted ComfyUI serverless worker (Curve25519 + XSalsa20-Poly1305); minimal logs; RAM-only temp/output; optional Pod API.",
+  "type": "serverless",
+  "category": "image",
+  "iconUrl": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/master/web/assets/favicon.png",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 20,
+    "presets": [
+      {
+        "name": "DryRun",
+        "defaults": { "DRY_RUN": "1", "NO_HISTORY": "1", "ENCRYPTION_REQUIRED": "0" }
+      }
+    ],
+    "env": [
+      { "key": "COMFYUI_MODEL_DIR", "value": "/workspace/models" },
+      { "key": "LOG_LEVEL", "value": "ERROR" },
+      { "key": "LOG_SILENT", "value": "1" },
+      { "key": "NO_HISTORY", "input": { "name": "Skip history fetch", "type": "string", "default": "1" } },
+      { "key": "ENCRYPTION_REQUIRED", "input": { "name": "Require encryption", "type": "string", "default": "1" } },
+      { "key": "WORKER_PRIVATE_KEY_B64", "input": { "name": "Server private key (b64)", "type": "string", "default": "" } }
+    ]
+  },
+  "handler": "server/handler.py",
+  "dockerfile": "Dockerfile",
+  "environment": {}
+}

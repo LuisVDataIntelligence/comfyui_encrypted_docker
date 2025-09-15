@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "smoke_dry_run",
+      "input": { "workflow": { "noop": { "class_type": "Note" } } },
+      "timeout": 60000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuCount": 1,
+    "env": [
+      { "key": "DRY_RUN", "value": "1" },
+      { "key": "ENCRYPTION_REQUIRED", "value": "0" },
+      { "key": "NO_HISTORY", "value": "1" }
+    ],
+    "allowedCudaVersions": ["12.7", "12.6", "12.5", "12.4", "12.3", "12.2", "12.1", "12.0"]
+  }
+}
+

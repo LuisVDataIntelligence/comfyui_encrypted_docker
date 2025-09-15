@@ -1,3 +1,5 @@
+[![Runpod](https://api.runpod.io/badge/LuisVDataIntelligence/comfyui_encrypted_docker)](https://console.runpod.io/hub/LuisVDataIntelligence/comfyui_encrypted_docker)
+
 Awesome—here’s a ready-to-build container plus client scripts (Python + Node) that add:
 
 Application-layer encryption of the workflow (Curve25519 + XSalsa20-Poly1305 via libsodium).

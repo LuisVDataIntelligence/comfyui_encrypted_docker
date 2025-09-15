@@ -13,6 +13,7 @@ LOG_SILENT = os.getenv("LOG_SILENT", "1")  # "1" => silence ComfyUI stdout/stder
 NO_HISTORY = os.getenv("NO_HISTORY", "0")  # "1" => don't GET /history
 # Require encrypted payloads by default for security. Set to "0" to allow plaintext workflows for testing.
 ENCRYPTION_REQUIRED = os.getenv("ENCRYPTION_REQUIRED", "1").lower() in ("1", "true", "yes")
+DRY_RUN = os.getenv("DRY_RUN", "0").lower() in ("1", "true", "yes")
 WORKER_PRIVATE_KEY_B64 = os.getenv("WORKER_PRIVATE_KEY_B64", "")
 
 # Logging (quiet by default)
@@ -109,7 +110,11 @@ def handle_request(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     init_comfy()
 
-    # Enforce encrypted-only mode unless explicitly disabled
+    # DRY-RUN short circuit for Hub tests / smoke checks
+    if DRY_RUN:
+        return {"status": "ok", "prompt_id": "dry-run"}
+
+    # Enforce encrypted-only mode unless explicitly disabled (still applies when not DRY_RUN)
     if ENCRYPTION_REQUIRED and not data.get("encrypted"):
         return {"error": "encryption_required: set ENCRYPTION_REQUIRED=0 to allow plaintext for testing"}
 
