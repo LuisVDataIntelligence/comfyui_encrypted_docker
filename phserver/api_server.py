@@ -84,7 +84,7 @@ def run_workflow(req: RunRequest):
 
 
 def _target_path(req: DownloadRequest) -> pathlib.Path:
-    base = pathlib.Path(MODEL_DIR)
+    base = pathlib.Path(MODEL_DIR).resolve()
     if req.dest:
         target_dir = base / pathlib.Path(req.dest)
     elif req.type:
@@ -94,8 +94,13 @@ def _target_path(req: DownloadRequest) -> pathlib.Path:
         target_dir = base / sub
     else:
         target_dir = base  # default to root models dir
-    target_dir.mkdir(parents=True, exist_ok=True)
-    return target_dir
+
+    resolved_target = target_dir.resolve()
+    if not resolved_target.is_relative_to(base):
+        raise HTTPException(status_code=400, detail="Invalid target directory outside model root")
+
+    resolved_target.mkdir(parents=True, exist_ok=True)
+    return resolved_target
 
 
 @app.post("/download")
