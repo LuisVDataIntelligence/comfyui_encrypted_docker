@@ -108,6 +108,7 @@ def download_model(req: DownloadRequest):
     import requests
     from urllib.parse import urlparse
 
+    base_dir = pathlib.Path(MODEL_DIR).resolve()
     target_dir = _target_path(req)
 
     filename = req.filename
@@ -115,7 +116,9 @@ def download_model(req: DownloadRequest):
         parsed = urlparse(req.url)
         filename = pathlib.Path(parsed.path).name or "download.bin"
 
-    dest_path = target_dir / filename
+    dest_path = (target_dir / filename).resolve()
+    if not dest_path.is_relative_to(base_dir):
+        raise HTTPException(status_code=400, detail="Invalid destination path outside model root")
     if dest_path.exists() and not req.overwrite:
         return {"status": "exists", "path": str(dest_path)}
 
@@ -139,7 +142,11 @@ def download_model(req: DownloadRequest):
                     fname = cd.split('filename=')[-1].strip().strip('"').strip("'")
                     if fname:
                         filename = fname
-                        dest_path = target_dir / filename
+                        dest_path = (target_dir / filename).resolve()
+                        if not dest_path.is_relative_to(base_dir):
+                            raise HTTPException(status_code=400, detail="Invalid destination path outside model root")
+            if dest_path.exists() and not req.overwrite:
+                return {"status": "exists", "path": str(dest_path)}
             with open(dest_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
                     if chunk:
