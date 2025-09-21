@@ -111,15 +111,18 @@ def download_model(req: DownloadRequest):
     base_dir = pathlib.Path(MODEL_DIR).resolve()
     target_dir = _target_path(req)
 
-    filename = req.filename
-    if not filename:
-        parsed = urlparse(req.url)
-        filename = pathlib.Path(parsed.path).name or "download.bin"
+    user_supplied = bool(req.filename)
+    parsed_url = urlparse(req.url)
+    filename = req.filename or pathlib.Path(parsed_url.path).name or None
 
-    dest_path = (target_dir / filename).resolve()
-    if not dest_path.is_relative_to(base_dir):
-        raise HTTPException(status_code=400, detail="Invalid destination path outside model root")
-    if dest_path.exists() and not req.overwrite:
+    def _resolve_dest(name: str) -> pathlib.Path:
+        dest = (target_dir / name).resolve()
+        if not dest.is_relative_to(base_dir):
+            raise HTTPException(status_code=400, detail="Invalid destination path outside model root")
+        return dest
+
+    dest_path = _resolve_dest(filename) if filename else None
+    if dest_path and dest_path.exists() and not req.overwrite:
         return {"status": "exists", "path": str(dest_path)}
 
     # Build request headers
@@ -134,17 +137,22 @@ def download_model(req: DownloadRequest):
     try:
         with requests.get(req.url, stream=True, timeout=120, headers=hdrs, allow_redirects=True) as r:
             r.raise_for_status()
-            # If filename not provided, try content-disposition
-            if not filename:
+            # If filename not provided by client, try content-disposition header
+            if not user_supplied:
                 cd = r.headers.get('content-disposition') or r.headers.get('Content-Disposition')
                 if cd and 'filename=' in cd:
                     # naive parse; strip quotes if present
                     fname = cd.split('filename=')[-1].strip().strip('"').strip("'")
                     if fname:
                         filename = fname
-                        dest_path = (target_dir / filename).resolve()
-                        if not dest_path.is_relative_to(base_dir):
-                            raise HTTPException(status_code=400, detail="Invalid destination path outside model root")
+                        dest_path = _resolve_dest(filename)
+
+            if not filename:
+                filename = pathlib.Path(parsed_url.path).name or None
+            if not filename:
+                filename = "download.bin"
+
+            dest_path = _resolve_dest(filename)
             if dest_path.exists() and not req.overwrite:
                 return {"status": "exists", "path": str(dest_path)}
             with open(dest_path, "wb") as f:
