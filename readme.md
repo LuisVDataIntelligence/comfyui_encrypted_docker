@@ -14,13 +14,13 @@ You can paste these into a repo as-is and build.
 
 ## Project layout
 
-- `server/` — Serverless worker and Pod API server
-  - `handler.py` (RunPod serverless entry)
+- `handler.py` — RunPod serverless entrypoint that boots the worker
+- `phserver/` — Worker + Pod API implementation reused across modes
   - `api_server.py` (FastAPI for Pod mode)
   - `worker_core.py` (decrypt + run ComfyUI)
   - `comfy_client.py` (HTTP/WS client for ComfyUI)
-  - `requirements.txt` (server deps)
   - `entrypoint.sh` (dispatches serverless vs API)
+  - `requirements.txt` (server dependencies)
 - `shared/` — Shared crypto helpers
   - `crypto_secure.py` (Curve25519 + XSalsa20-Poly1305)
 - `client/` — Submission tools
@@ -28,7 +28,8 @@ You can paste these into a repo as-is and build.
   - `submit_job.mjs` (RunPod serverless, Node)
   - `local_submit.py` (Pod API, local HTTP)
   - `gen_keys.py` (generate server keypair)
-  - `examples/minimal_text2img.json`
+- `examples/` — Sample workflows (e.g. `minimal_text2img.json`)
+- `tests/` — Local QA helpers (e.g. `qa_container.sh`)
 - `Dockerfile` — builds server image (serverless/pod)
 
 ## Crypto helpers
@@ -119,11 +120,11 @@ Here’s a complete package—Docker container plus client scripts—built aroun
 
 Dockerfile: Builds a CUDA‑enabled image, clones ComfyUI and installs dependencies. It installs libsodium via PyNaCl and sets the output/temp directories to /dev/shm to avoid persisting files. The container launches ComfyUI headless and waits for jobs.
 
-server/handler.py: RunPod serverless handler that decrypts incoming workflows when input.encrypted is set, starts ComfyUI silently, and returns only minimal metadata (prompt_id + optional history). It suppresses logs and uses in‑memory storage.
+handler.py: RunPod serverless handler that decrypts incoming workflows when input.encrypted is set, starts ComfyUI silently, and returns only minimal metadata (prompt_id + optional history). It suppresses logs and uses in‑memory storage.
 
 shared/crypto_secure.py: Helpers to generate keypairs and perform envelope encryption/decryption using Curve25519 + XSalsa20‑Poly1305.
 
-server/comfy_client.py: Minimal client for local API calls to ComfyUI (queue prompt, wait via WebSocket).
+phserver/comfy_client.py: Minimal client for local API calls to ComfyUI (queue prompt, wait via WebSocket).
 
 client/examples/minimal_text2img.json: Simple workflow demonstrating how to specify a model and text prompt.
 
@@ -153,7 +154,7 @@ LOG_LEVEL=ERROR, LOG_SILENT=1 for minimal logging
 
 Optionally NO_HISTORY=1 if you don’t want to call /history
 
-Call your endpoint via HTTPS with your RunPod API key docs.runpod.io. Use the provided client scripts to encrypt the workflow: the client builds the JSON payload containing encrypted: true, the nonce, ciphertext and the client’s epk. On the server, server/handler.py decrypts it and forwards the workflow to ComfyUI.
+Call your endpoint via HTTPS with your RunPod API key docs.runpod.io. Use the provided client scripts to encrypt the workflow: the client builds the JSON payload containing encrypted: true, the nonce, ciphertext and the client’s epk. On the server, handler.py decrypts it and forwards the workflow to ComfyUI.
 
 ## Notes
 
@@ -171,9 +172,8 @@ Rotate your keys periodically and scope your RunPod API key to this endpoint onl
 
 Quick path to a smooth publish:
 
-1) Ensure Dockerfile exists at repo path used by the Hub.
-   - This project now includes `WIP_ComfyUI_Docker/Dockerfile` for auto-detection.
-   - In the Hub form, set Dockerfile path to `WIP_ComfyUI_Docker/Dockerfile` if needed.
+1) Ensure the Hub build uses the root-level `Dockerfile` (default repo path).
+   - If prompted for a path, enter `Dockerfile` so the Hub picks up the root image definition.
 
 2) Add these environment variables (recommended defaults):
    - `COMFYUI_MODEL_DIR=/workspace/models`
