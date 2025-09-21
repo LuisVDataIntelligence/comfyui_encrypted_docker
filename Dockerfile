@@ -34,6 +34,7 @@ RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 # Server code
 COPY phserver /opt/app/phserver
 COPY shared /opt/app/shared
+COPY handler.py /opt/app/handler.py
 
 # Where Serverless/Pod volume mounts; point Comfy to it for models
 ENV COMFYUI_MODEL_DIR=/workspace/models
