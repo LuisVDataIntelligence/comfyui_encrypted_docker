@@ -1,0 +1,434 @@
+{
+  "6": {
+    "inputs": {
+      "text": "The girl winks to the camera and then bows her head",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "Overexposure, static, blurred details, subtitles, paintings, pictures, still, overall gray, worst quality, low quality, JPEG compression residue, ugly, mutilated, redundant fingers, poorly painted hands, poorly painted faces, deformed, disfigured, deformed limbs, fused fingers, cluttered background, three legs, a lot of people in the background, upside down, illustration, anime",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "271",
+        0
+      ],
+      "vae": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "38": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp16.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "39": {
+    "inputs": {
+      "vae_name": "Wan2.1_VAE.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "50": {
+    "inputs": {
+      "width": [
+        "63",
+        0
+      ],
+      "height": [
+        "64",
+        0
+      ],
+      "length": 81,
+      "batch_size": 1,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "vae": [
+        "39",
+        0
+      ],
+      "clip_vision_output": [
+        "270",
+        0
+      ],
+      "start_image": [
+        "62",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo (15-16FPS)"
+    }
+  },
+  "52": {
+    "inputs": {
+      "image": "main_carly-3e6a130765a0_spec_v2.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "62": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "width": [
+        "63",
+        0
+      ],
+      "height": [
+        "64",
+        0
+      ],
+      "crop": "center",
+      "image": [
+        "52",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Upscale Image"
+    }
+  },
+  "63": {
+    "inputs": {
+      "value": 480
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Width"
+    }
+  },
+  "64": {
+    "inputs": {
+      "value": 720
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Height"
+    }
+  },
+  "91": {
+    "inputs": {
+      "ckpt_name": "film_net_fp32.pt",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "frames": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "FILM VFI",
+    "_meta": {
+      "title": "FILM VFI"
+    }
+  },
+  "156": {
+    "inputs": {
+      "value": "set name/subfolder"
+    },
+    "class_type": "PrimitiveString",
+    "_meta": {
+      "title": "Set name"
+    }
+  },
+  "176": {
+    "inputs": {
+      "lora_name": "Wan2.1_I2V_14B_FusionX.safetensors",
+      "strength_model": 1.0000000000000002,
+      "model": [
+        "312",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "178": {
+    "inputs": {
+      "lora_name": "WAN_dr34mj0b.safetensors",
+      "strength_model": 0.8000000000000002,
+      "model": [
+        "313",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lora1"
+    }
+  },
+  "193": {
+    "inputs": {
+      "frame_rate": 30,
+      "loop_count": 0,
+      "filename_prefix": [
+        "206",
+        0
+      ],
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 0,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "91",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "204": {
+    "inputs": {
+      "shift": [
+        "284",
+        0
+      ],
+      "model": [
+        "293",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "206": {
+    "inputs": {
+      "string_a": [
+        "156",
+        0
+      ],
+      "string_b": "interpolated/video",
+      "delimiter": "/"
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "269": {
+    "inputs": {
+      "clip_name": "clip_vision_h.safetensors"
+    },
+    "class_type": "CLIPVisionLoader",
+    "_meta": {
+      "title": "Load CLIP Vision"
+    }
+  },
+  "270": {
+    "inputs": {
+      "crop": "none",
+      "clip_vision": [
+        "269",
+        0
+      ],
+      "image": [
+        "52",
+        0
+      ]
+    },
+    "class_type": "CLIPVisionEncode",
+    "_meta": {
+      "title": "CLIP Vision Encode"
+    }
+  },
+  "271": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 1012033924873168,
+      "steps": [
+        "273",
+        0
+      ],
+      "cfg": 1,
+      "sampler_name": "uni_pc",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": [
+        "274",
+        0
+      ],
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "204",
+        0
+      ],
+      "positive": [
+        "50",
+        0
+      ],
+      "negative": [
+        "50",
+        1
+      ],
+      "latent_image": [
+        "50",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "273": {
+    "inputs": {
+      "value": 6
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "274": {
+    "inputs": {
+      "value": 6
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "First pass end"
+    }
+  },
+  "281": {
+    "inputs": {
+      "lora_name": "SECRET_SAUCE_WAN2.1_14B_fp8.safetensors",
+      "strength_model": 0.30000000000000004,
+      "model": [
+        "178",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lora1"
+    }
+  },
+  "284": {
+    "inputs": {
+      "value": 5.000000000000001
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Shift"
+    }
+  },
+  "293": {
+    "inputs": {
+      "lora_name": "wan2.2_i2v_lightx2v_4stepsv1_high_noise.safetensors",
+      "strength_model": 0.8000000000000002,
+      "model": [
+        "281",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lora1"
+    }
+  },
+  "305": {
+    "inputs": {
+      "filename_prefix": [
+        "306",
+        0
+      ],
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "306": {
+    "inputs": {
+      "string_a": [
+        "156",
+        0
+      ],
+      "string_b": "frames//frame",
+      "delimiter": "/"
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "312": {
+    "inputs": {
+      "unet_name": "wan2.1-i2v-14b-480p-Q3_K_S.gguf",
+      "dequant_dtype": "default",
+      "patch_dtype": "default",
+      "patch_on_device": false
+    },
+    "class_type": "UnetLoaderGGUFAdvanced",
+    "_meta": {
+      "title": "Unet Loader (GGUF/Advanced)"
+    }
+  },
+  "313": {
+    "inputs": {
+      "lora_name": "High_speed_dynamic.safetensors",
+      "strength_model": 0.58,
+      "model": [
+        "176",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  }
+}

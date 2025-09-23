@@ -8,17 +8,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from phserver.worker_core import handle_request, init_comfy, MODEL_DIR, server_public_key_b64
+from phserver.worker_core import COMFY_AUTOSTART  # new flag
 
 # Load .env (best-effort) before reading environment
 load_dotenv_if_present()
 DOCS_ENABLED = os.getenv("API_DOCS", "false").lower() == "true"
-app = FastAPI(
-    title="ComfyUI Secure API",
-    version="0.1.0",
-    docs_url=("/docs" if DOCS_ENABLED else None),
-    redoc_url=("/redoc" if DOCS_ENABLED else None),
-    openapi_url=("/openapi.json" if DOCS_ENABLED else None),
-)
 
 
 class RunRequest(BaseModel):
@@ -57,9 +51,26 @@ class DownloadRequest(BaseModel):
     headers: Optional[dict] = Field(default=None, description="Optional extra HTTP headers to include on the request")
 
 
-@app.on_event("startup")
-def _startup():
-    init_comfy()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    from phserver.worker_core import DRY_RUN as WORKER_DRY_RUN
+    if not WORKER_DRY_RUN and COMFY_AUTOSTART:
+        init_comfy()
+    yield
+    # Shutdown (if needed)
+
+# Update app initialization to use lifespan
+app = FastAPI(
+    title="ComfyUI Secure API",
+    version="0.1.0",
+    docs_url=("/docs" if DOCS_ENABLED else None),
+    redoc_url=("/redoc" if DOCS_ENABLED else None),
+    openapi_url=("/openapi.json" if DOCS_ENABLED else None),
+    lifespan=lifespan,
+)
 
 
 @app.get("/healthz")

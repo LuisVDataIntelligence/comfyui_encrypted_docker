@@ -89,7 +89,7 @@ If you want, I can also generate a Load-Balancing + FastAPI variant with Bearer/
 
 ## Pod mode (HTTP API + model downloader)
 
-Set `LAUNCH_MODE=api` and run the container on a Pod. The API listens on `:8000` and keeps ComfyUI bound to localhost.
+Set `LAUNCH_MODE=api` and run the container on a Pod. The API listens on `:8000` (override with `API_PORT`, e.g. `API_PORT=80`) and keeps ComfyUI bound to localhost. See `DEPLOY_MODES.md` for a side‑by‑side of Pod vs Serverless usage and invocation examples.
 
 Endpoints:
 
